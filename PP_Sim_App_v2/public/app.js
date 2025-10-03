@@ -974,7 +974,7 @@ Please provide:
 5. Resource leveling suggestions based on slack times
 6. Overall schedule risk assessment
 
-Format your response with markdown headings and bullet points for clarity.`
+Format your response into 3 concise paragraphs. MAXMIMUM WORD COUNT 300 words.`
         }]
       })
     });

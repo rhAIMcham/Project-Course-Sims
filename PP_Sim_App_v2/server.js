@@ -23,7 +23,7 @@ app.post('/api/evaluate', async (req, res) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 500,
-        system: "You are an expert project management analyst specializing in Critical Path Method (CPM) analysis. Provide detailed, actionable insights with clear explanations. Format your response using markdown with clear headings and bullet points.",
+        system: "You are an expert project management analyst specializing in Critical Path Method (CPM) analysis. Provide detailed, actionable insights with clear explanations. Format your response into clear paragrahs and evaluate strengths and weaknesses in the plan. Reply with MAXIMUM 400 words.",
         messages: [{
           role: 'user',
           content: userMessage
