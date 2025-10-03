@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Critical Path Planner – POC</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div class="app-container">
+    <div class="main-wrapper">
+      <header class="header">
+        <h1 class="header-title">Critical Path Planner – POC</h1>
+        <div class="stage-indicator">
+          <span class="stage-label">Stage:</span>
+          <span class="stage-badge" id="stage-badge">Enter ES/EF</span>
+        </div>
+      </header>
+
+      <!-- Project selector -->
+      <section class="section-card">
+        <div class="project-header">
+          <h2 class="section-title">Projects</h2>
+          <div class="project-controls">
+            <button class="btn-primary btn-sm" onclick="addProject()">+ Add Project</button>
+            <button class="btn-secondary btn-sm" onclick="deleteProject()">Delete Project</button>
+          </div>
+        </div>
+        <div class="project-buttons" id="project-buttons"></div>
+        
+        <!-- Editable project name -->
+        <div class="project-name-editor">
+          <label class="form-label">Project Name:</label>
+          <input type="text" class="form-input" id="project-name">
+        </div>
+
+        <div class="instructions-text">
+          1) Enter ES/EF in each bar, then check. 2) Enter LS/LF, then check. 3) Drag bars to explore slack & critical path changes.
+        </div>
+      </section>
+
+      <!-- Task management -->
+      <section class="section-card" id="taskAddSection">
+        <div class="project-header">
+          <h2 class="section-title">Tasks</h2>
+          <button class="btn-primary btn-sm" onclick="addTask()">+ Add Task</button>
+        </div>
+        <div id="task-list"></div>
+      </section>
+
+      <!-- Gantt -->
+      <section class="section-card" id="gantt-section">
+        <div class="gantt-header">
+          <h2 class="section-title">Gantt Chart</h2>
+          <div class="duration-display">Project duration: <span class="duration-value" id="project-duration">0</span> units</div>
+        </div>
+
+        <div id="chart-container" class="chart-container">
+          <!-- Scale header -->
+          <div class="scale-header">
+            <div class="scale-grid" id="scale-grid"></div>
+          </div>
+
+          <!-- Rows + dependency arrows -->
+          <div class="rows-container" id="rows-container">
+            <!-- Grid columns -->
+            <div class="grid-overlay" style="margin-left: 24px;">
+              <div class="grid-inner" id="grid-inner"></div>
+            </div>
+
+            <!-- Task bars -->
+            <div id="task-bars"></div>
+
+            <!-- Dependency arrows overlay -->
+            <svg class="arrows-overlay" id="arrows-svg">
+              <defs>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto-start-reverse">
+                  <path d="M0,0 L8,4 L0,8 Z" fill="#9ca3af" />
+                </marker>
+                <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto-start-reverse">
+                  <path d="M0,0 L8,4 L0,8 Z" fill="#ef4444" />
+                </marker>
+              </defs>
+              <g id="arrow-paths"></g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-container" id="controls-container"></div>
+      </section>
+
+      <!-- Legend & tips -->
+      <section class="section-card mt-4">
+        <div class="legend-container">
+          <div class="legend-item">
+            <span class="legend-swatch critical"></span>
+            <span>Critical path</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-swatch non-critical"></span>
+            <span>Non-critical task</span>
+          </div>
+          <div class="legend-text">Slack = LS − ES (shown inside each task bar).</div>
+          <button class="btn-secondary btn-sm" onclick="resetProjectData()">Reset Project</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title"></h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Task Editor Modal -->
+  <div id="task-editor-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="task-editor-title">Add New Task</h3>
+        <button class="modal-close" onclick="closeTaskEditor()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="task-editor-form">
+          <div class="form-group">
+            <label class="form-label">Task ID</label>
+            <input type="text" class="form-input" id="task-id" maxlength="3">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Task Name</label>
+            <input type="text" class="form-input" id="task-name-input" placeholder="e.g., Prep walls">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Duration (time units)</label>
+            <input type="number" class="form-input" id="task-duration" min="1">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Dependencies (predecessors)</label>
+            <div class="deps-list" id="deps-list"></div>
+          </div>
+          
+          <div class="form-actions">
+            <button class="btn-secondary" onclick="closeTaskEditor()">Cancel</button>
+            <button class="btn-primary" onclick="saveTask()">Save Task</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="task-management" class="mb-3">
+    <!-- Task management buttons will be inserted here -->
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

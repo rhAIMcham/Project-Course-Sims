@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>What is a project</title>
+    <link rel="icon" type="image/x-icon" href="/Assets/comments.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+  <style>
+:root {
+        --AIMblue: #4353A3;
+        --darkBlue: #38416D;
+        --teal: #5DC8B9;
+        --cream: #F1EEDE;
+        --grey: #e7e9ec;
+        --rust: #AF4510;
+        --navy: #12195C;
+        --white: #ffffff;
+        --lightBlue: #AEBAE4;
+      }
+
+      body {
+        font-family: "IBM Plex Sans", sans-serif;
+      }
+
+      table {
+        width: 100%;
+        margin:0;
+        padding:0;
+        border-collapse: collapse;
+        border-spacing: 0;
+        text-align: left;
+      }
+
+      table tr {
+        border: 1px solid var(--AIMblue);
+        padding: 5px;
+      }
+
+      table th, table td {
+        border: 1px solid var(--AIMblue);
+        padding: 10px;
+      }
+
+      table th {
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        background-color: var(--darkBlue);
+        color: var(--white)
+      }
+      tr:nth-child(even) {
+  background-color: var(--grey); /*Grey of torment!*/
+} 
+
+      tr:nth-child(odd) {
+  background-color: white; 
+} 
+
+      @media screen and (max-width: 600px) {
+
+        table {
+          border: 0;
+          border: none;
+        }
+
+        table thead {
+          display: none;
+        }
+
+        table tr {
+          margin-bottom: 10px;
+          display: block;
+          border-bottom: 2px solid var(--AIMblue);
+          border-left: 1px solid var(--lightBlue);
+          border-right: 1px solid var(--lightBlue);
+          border-top: 1px solid var(--lightBlue);
+        }
+
+        table td {
+          display: block;
+          text-align: right;
+          font-size: 13px;
+          border-bottom: 1px dotted var(--rust);
+          border-left: 0px dotted #ccc;
+          border-right: 0px dotted #ccc;
+          border-top: 0px dotted #ccc;
+        }
+
+        table td:last-child {
+          border-bottom: 0;
+        }
+
+        table td:before {
+          content: attr(data-label);
+          float: left;
+          font-weight: bold;
+        }
+      }
+
+  </style>
+  
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Project</th>
+          <th>Operations</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Feature">Duration</td>
+          <td data-label="Project">Temporary, with a defined start and end.</td>
+          <td data-label="Operations">Ongoing, with no defined end.</td>
+        </tr>
+        <tr>
+          <td data-label="Feature">Output</td>
+          <td data-label="Project">Creates a unique product, service, or result.</td>
+          <td data-label="Operations">Creates repetitive work and delivers the same output repeatedly.</td>
+        </tr>
+        <tr>
+          <td data-label="Feature">Goal</td>
+          <td data-label="Project">To achieve a specific, unique objective.</td>
+          <td data-label="Operations">To maintain business processes and existing products.</td>
+        </tr>
+        <tr>
+          <td data-label="Feature">Scope</td>
+          <td data-label="Project">Defined boundaries for a specific set of work.</td>
+          <td data-label="Operations">The normal range of activities to deliver products or services.</td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+
+</html>
