@@ -82,7 +82,8 @@ const state = {
   unitWidth: 28,
   dragging: null,
   editingTask: null,
-  isEvaluating: false
+  isEvaluating: false,
+  warningShown: false
 };
 
 function getCurrentProject() {
@@ -226,7 +227,28 @@ function renderProjectSelector() {
   });
   
   const project = getCurrentProject();
-  document.getElementById('project-name').value = project.name;
+  const projectNameContainer = document.getElementById('project-name-container');
+  
+  // Clear existing content
+  projectNameContainer.innerHTML = '';
+  
+  if (isDefaultProject(state.currentProjectId)) {
+    // For default projects, show as plain text
+    const nameElement = document.createElement('p');
+    nameElement.id = 'project-name';
+    nameElement.className = 'project-name-text';
+    nameElement.textContent = project.name;
+    projectNameContainer.appendChild(nameElement);
+  } else {
+    // For custom project, show as input
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'project-name';
+    nameInput.className = 'project-name-input';
+    nameInput.value = project.name;
+    nameInput.addEventListener('input', (e) => updateProjectName(e.target.value));
+    projectNameContainer.appendChild(nameInput);
+  }
   
   // Show/hide task add section based on project type
   const taskAddSection = document.getElementById('taskAddSection');
@@ -354,7 +376,9 @@ function renderGridOverlay(maxTime) {
 
 function createTaskBar(task, rowIdx, computed, project) {
   const es = computed.ES[task.id];
-  const curStart = state.stage === "interactive" ? (state.minStart[task.id] || es) : es;
+  const curStart = (state.stage === "interactive" || !isDefaultProject(state.currentProjectId)) 
+    ? (state.minStart[task.id] || es) 
+    : es;
   const isCritical = computed.critical.has(task.id);
   const left = PADDING + curStart * state.unitWidth;
   const top = rowIdx * ROW_HEIGHT + 2;
@@ -365,7 +389,11 @@ function createTaskBar(task, rowIdx, computed, project) {
   row.style.height = ROW_HEIGHT + 'px';
   
   const bar = document.createElement('div');
-  bar.className = `task-bar ${isCritical ? 'critical' : 'non-critical'} ${state.stage === 'interactive' ? 'interactive' : 'static'}`;
+  bar.className = `task-bar ${isCritical ? 'critical' : 'non-critical'} ${
+    state.stage === 'interactive' || !isDefaultProject(state.currentProjectId) 
+      ? 'interactive' 
+      : 'static'
+  }`;
   bar.style.left = left + 'px';
   bar.style.width = (task.duration * state.unitWidth) + 'px';
   bar.dataset.taskId = task.id;
@@ -435,7 +463,7 @@ function renderArrows(project, computed, maxTime) {
 }
 
 function createArrowPaths(task, tgtIdx, project, computed) {
-  const tgtStart = state.stage === "interactive" 
+  const tgtStart = state.stage === "interactive" || !isDefaultProject(state.currentProjectId)
     ? (state.minStart[task.id] || computed.ES[task.id]) 
     : computed.ES[task.id];
   const tgtStartX = PADDING + tgtStart * state.unitWidth;
@@ -445,7 +473,7 @@ function createArrowPaths(task, tgtIdx, project, computed) {
     const pred = project.tasks.find(x => x.id === depId);
     if (!pred) return '';
     
-    const predStart = state.stage === "interactive" 
+    const predStart = state.stage === "interactive" || !isDefaultProject(state.currentProjectId)
       ? (state.minStart[pred.id] || computed.ES[pred.id]) 
       : computed.ES[pred.id];
     const predStartX = PADDING + predStart * state.unitWidth;
@@ -543,6 +571,7 @@ function addResetButton(container) {
 // EVENT HANDLERS - INPUT
 // ============================================================================
 
+
 function handleInputChange(e) {
   const { taskId, field } = e.target.dataset;
   const value = e.target.value;
@@ -556,6 +585,13 @@ function handleInputChange(e) {
   
   if (fieldMap[field]) {
     state[fieldMap[field]][taskId] = value;
+    
+    // Re-render controls to show/hide Submit button in real-time for custom projects
+    if (!isDefaultProject(state.currentProjectId)) {
+      const project = getCurrentProject();
+      const computed = computeCPM(project.tasks, state.minStart);
+      renderControls(project, computed);
+    }
   }
 }
 
@@ -564,10 +600,11 @@ function handleInputChange(e) {
 // ============================================================================
 
 function handleBarMouseDown(e) {
-  if (state.stage !== "interactive") return;
-  
   const taskId = e.currentTarget.dataset.taskId;
   const project = getCurrentProject();
+
+  if (state.stage !== "interactive" && isDefaultProject(state.currentProjectId)) return;
+  
   const computed = computeCPM(project.tasks, state.minStart);
   const orig = state.minStart[taskId] || computed.ES[taskId];
   
@@ -577,22 +614,42 @@ function handleBarMouseDown(e) {
 function handleMouseMove(e) {
   if (!state.dragging) return;
   
-  const { id, startX, origStart } = state.dragging;
   const project = getCurrentProject();
-  const computed = computeCPM(project.tasks, state.minStart);
+  if (!isDefaultProject(state.currentProjectId)) return;
   
-  const dx = e.clientX - startX;
+  // Get original computed values
+  const originalComputed = computeCPM(project.tasks, state.minStart);
+  const originalMaxEF = Math.max(...project.tasks.map(t => originalComputed.EF[t.id]));
+  
+  // Calculate new position
+  const dx = e.clientX - state.dragging.startX;
   const deltaUnits = Math.round(dx / state.unitWidth);
-  const tentative = Math.max(0, origStart + deltaUnits);
+  const newStart = Math.max(0, state.dragging.origStart + deltaUnits);
   
-  const preds = project.tasks.find(t => t.id === id).deps;
-  const predEF = preds.length ? Math.max(...preds.map(p => computed.EF[p])) : 0;
-  const newStart = Math.max(tentative, predEF);
+  // Compute new values with proposed change
+  const newMinStart = { ...state.minStart, [state.dragging.id]: newStart };
+  const newComputed = computeCPM(project.tasks, newMinStart);
   
-  const newMinStart = { ...state.minStart, [id]: newStart };
-  propagateConstraints(id, project, computed, newMinStart);
+  // Find the last task (one with no successors)
+  const lastTasks = project.tasks.filter(task => 
+    !project.tasks.some(t => t.deps.includes(task.id))
+  );
   
-  state.minStart = newMinStart;
+  // Get maximum EF of last tasks with new computation
+  const newMaxEF = Math.max(...lastTasks.map(t => newComputed.EF[t.id]));
+  
+  // Show warning if timeline extends
+  if (newMaxEF > originalMaxEF) {
+    if (!state.warningShown) { // Prevent multiple alerts
+      alert('Warning - this is extending the deadline of your project');
+      state.warningShown = true;
+    }
+  } else {
+    state.warningShown = false;
+  }
+  
+  // Update state and render
+  state.minStart[state.dragging.id] = newStart;
   render();
 }
 
@@ -617,7 +674,11 @@ function propagateConstraints(taskId, project, computed, newMinStart) {
 }
 
 function handleMouseUp() {
-  state.dragging = null;
+  if (state.dragging) {
+    state.dragging = null;
+    state.warningShown = false;
+    render();
+  }
 }
 
 // ============================================================================
@@ -912,6 +973,24 @@ function saveTask() {
 // AI EVALUATION
 // ============================================================================
 
+function formatChatResponse(text) {
+  // First handle explicit line breaks
+  let formatted = text.replace(/\n/g, '<br>');
+  
+  // Then optionally split long sentences
+  if (text.length > 100 && !text.includes('\n')) {
+    const sentences = text.match(/[^\.!?]+[\.!?]+/g) || [text];
+    if (sentences.length > 1) {
+      formatted = sentences
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+        .join('<br>');
+    }
+  }
+  
+  return formatted;
+}
+
 async function submitForEvaluation() {
   try {
     const project = getCurrentProject();
@@ -985,16 +1064,17 @@ Format your response into 3 concise paragraphs. MAXMIMUM WORD COUNT 300 words.`
     }
     
     const data = await response.json();
-    showModal("Project Schedule Analysis", `
-      <div class="evaluation-results">
-        <div class="evaluationContents">
-         <p>${data.content}</p>
-        </div>
-        <div class="form-actions" style="margin-top: 1.5rem;">
-          <button class="btn-primary" onclick="closeModal()">Close</button>
-        </div>
-      </div>
-    `);
+    const formattedContent = formatChatResponse(data.content);
+showModal("Project Schedule Analysis", `
+  <div class="evaluation-results">
+    <div class="evaluationContents">
+     <p>${formattedContent}</p>
+    </div>
+    <div class="form-actions" style="margin-top: 1.5rem;">
+      <button class="btn-primary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+`);
   } catch (error) {
     console.error('Evaluation error:', error);
     alert(`Failed to get AI evaluation: ${error.message}`);
@@ -1016,17 +1096,22 @@ function handleResize() {
 // INITIALIZATION
 // ============================================================================
 
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Set up global event listeners
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', handleMouseUp);
+  // Ensure initial state is properly set
+  state.projects = JSON.parse(JSON.stringify(INITIAL_PROJECTS));
+  state.currentProjectId = INITIAL_PROJECTS[0].id;
+  state.stage = "esef";
+  
+  // Initialize empty state objects
+  resetProjectState();
+  
+  // Add window resize listener
   window.addEventListener('resize', handleResize);
+  window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('mouseup', handleMouseUp);
   
-  // Project name input
-  document.getElementById('project-name').addEventListener('input', (e) => {
-    updateProjectName(e.target.value);
-  });
-  
-  // Initial render
-  render();
+  // Perform initial render
+  handleResize(); // This ensures proper chart sizing
+  render(); // This will render all components
 });

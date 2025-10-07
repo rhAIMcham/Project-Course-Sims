@@ -417,6 +417,7 @@ h1 {
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.4);
+  color: black;
 }
 
 .modal-content {
@@ -424,7 +425,7 @@ h1 {
   border-radius: 1rem;
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   width: 100%;
-  max-width: 32rem;
+  max-width: 80%;
   padding: 1.5rem;
 }
 
@@ -433,6 +434,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
+  color: black;
 }
 
 .modal-title {
@@ -447,6 +449,7 @@ h1 {
   background-color: #f3f4f6;
   border: none;
   cursor: pointer;
+  color: black;
 }
 
 .modal-close:hover {
@@ -509,6 +512,32 @@ h1 {
 
 #project-name {
   width: 250px;
+}
+
+.project-name-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  padding: 0.5rem;
+}
+
+.project-name-input {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  width: 100%;
+  max-width: 400px;
+  background-color: white;
+}
+
+.project-name-input:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
 }
 
 .form-group {
